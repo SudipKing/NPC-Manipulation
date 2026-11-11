@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Gate at Harrowmere</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500;700&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --nightstone: #1b242c;
+    --stone: #2a3640;
+    --stone-light: #3a4853;
+    --limewash: #e6e1d3;
+    --muted: #96a3ab;
+    --lantern: #e9b44c;
+    --sealwax: #b33a2e;
+    --moss: #86a380;
+    --story: "IM Fell English", "Iowan Old Style", Georgia, serif;
+    --ui: "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--nightstone);
+    color: var(--limewash);
+    font-family: var(--ui);
+    font-size: 17px;
+    line-height: 1.45;
+  }
+  .page {
+    max-width: 1080px;
+    height: 100%;
+    margin: 0 auto;
+    padding: 0 16px 16px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 280px;
+    grid-template-rows: auto minmax(0, 1fr);
+    column-gap: 28px;
+  }
+
+  /* ---- the gate ---- */
+  .scene { grid-column: 1 / -1; position: relative; }
+  .scene svg { display: block; width: 100%; height: clamp(150px, 26vh, 230px); }
+  .scene h1 {
+    position: absolute; left: 0; bottom: 14px; margin: 0;
+    font-family: var(--story); font-weight: 400;
+    font-size: clamp(1.6rem, 4vw, 2.5rem); line-height: 1.05;
+    text-shadow: 0 2px 12px var(--nightstone);
+  }
+  .scene .where {
+    position: absolute; right: 0; bottom: 18px;
+    font-family: var(--story); font-style: italic; color: var(--lantern);
+    text-shadow: 0 2px 12px var(--nightstone);
+  }
+  #portcullis { transition: transform 0.5s cubic-bezier(.5,0,.9,.6); transform: translateY(-112px); }
+  .scene[data-gate="shut"] #portcullis { transform: translateY(0); }
+  #vale { transition: transform 0.9s ease, opacity 0.6s ease; }
+  .scene[data-gate="passed"] #vale { transform: translateX(-74px); }
+  .scene[data-away="true"] #vale { opacity: 0.25; }
+  #glow { transition: opacity 0.6s ease; }
+  .scene[data-gate="shut"] #glow { opacity: 0.35; }
+
+  /* ---- story ---- */
+  .story { display: flex; flex-direction: column; min-height: 0; }
+  #log {
+    flex: 1; min-height: 0; overflow-y: auto;
+    padding: 8px 12px 8px 0;
+    font-family: var(--story); font-size: 1.16rem; line-height: 1.55;
+    scrollbar-color: var(--stone-light) transparent;
+  }
+  #log p { margin: 0 0 0.7em; max-width: 64ch; }
+  #log .you { color: var(--muted); font-family: var(--ui); font-size: 1rem; margin-top: 1.2em; }
+  #log .you::before { content: "\203A\00a0"; color: var(--lantern); }
+  #log .vale, #log .clerk, #log .steward, #log .scrivener, #log .tavern {
+    padding-left: 14px; border-left: 2px solid var(--speaker, var(--muted));
+  }
+  #log .vale { --speaker: var(--lantern); color: #f4e6c3; }
+  #log .speaker { display: block; font-family: var(--ui); font-size: 0.82rem; font-weight: 700; color: var(--speaker, var(--muted)); line-height: 1.2; }
+  #log .narr { font-style: italic; color: #cfd3cf; }
+  #log .sys { font-family: var(--ui); font-size: 0.98rem; color: var(--moss); }
+  #log .verdict-arrested { color: var(--sealwax); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 0 8px; }
+  .chips button {
+    font: inherit; font-size: 0.92rem; color: var(--limewash);
+    background: transparent; border: 1px solid var(--stone-light);
+    border-radius: 3px; padding: 3px 10px; cursor: pointer;
+  }
+  .chips button:hover { border-color: var(--lantern); color: var(--lantern); }
+  form { display: flex; gap: 8px; }
+  #say {
+    flex: 1; min-width: 0; font: inherit; color: var(--limewash);
+    background: var(--stone); border: 1px solid var(--stone-light);
+    border-radius: 3px; padding: 10px 12px;
+  }
+  #say::placeholder { color: var(--muted); }
+  .act {
+    font: inherit; font-weight: 700; color: var(--nightstone);
+    background: var(--lantern); border: 0; border-radius: 3px;
+    padding: 0 18px; cursor: pointer;
+  }
+  .act:hover { background: #f3c566; }
+  :focus-visible { outline: 2px solid var(--lantern); outline-offset: 2px; }
+
+  /* ---- the ledger ---- */
+  .ledger { padding-top: 8px; overflow-y: auto; min-height: 0; }
+  .ledger h2 {
+    font-family: var(--story); font-weight: 400; font-size: 1.15rem;
+    margin: 18px 0 6px; padding-bottom: 4px; border-bottom: 1px solid var(--stone-light);
+  }
+  .ledger h2:first-child { margin-top: 0; }
+  .ledger ul { list-style: none; margin: 0; padding: 0; }
+  .ledger li { padding: 2px 0; color: #d3d6d0; }
+  .ledger .empty { color: var(--muted); font-style: italic; }
+  .tally { display: flex; gap: 9px; align-items: center; height: 34px; }
+  .tally i { display: block; width: 4px; height: 28px; background: var(--stone-light); border-radius: 2px; transform: rotate(6deg); }
+  .tally i.on { background: var(--sealwax); }
+  .tally span { margin-left: 8px; color: var(--muted); font-size: 0.95rem; }
+  .again {
+    margin-top: 22px; font: inherit; color: var(--limewash); background: transparent;
+    border: 1px solid var(--stone-light); border-radius: 3px; padding: 6px 12px; cursor: pointer;
+  }
+  .again:hover { border-color: var(--lantern); color: var(--lantern); }
+
+  @media (max-width: 760px) {
+    html, body { height: auto; }
+    .page { display: block; height: auto; }
+    #log { max-height: 46vh; min-height: 220px; }
+    .ledger { margin-top: 22px; }
+    .scene .where { position: static; display: block; padding-bottom: 6px; }
+    .scene h1 { position: static; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #portcullis, #vale, #glow { transition: none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="scene" id="scene" data-gate="open">
+    <svg viewBox="0 0 1000 230" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+      <defs>
+        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#1b242c"/><stop offset="1" stop-color="#3b4450"/>
+        </linearGradient>
+        <radialGradient id="lamp" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stop-color="#e9b44c" stop-opacity="0.75"/><stop offset="1" stop-color="#e9b44c" stop-opacity="0"/>
+        </radialGradient>
+        <clipPath id="arch"><path d="M440 230 V128 a60 60 0 0 1 120 0 V230 Z"/></clipPath>
+      </defs>
+      <rect width="1000" height="230" fill="url(#sky)"/>
+      <!-- curtain wall and towers -->
+      <path fill="#2a3640" d="M0 230 V120 h28 v-14 h24 v14 h28 v-14 h24 v14 h28 v-14 h24 v14 h28 v-14 h24 v14 h28 v-14 h24 v14 h40 V60 h18 v-16 h20 v16 h20 v-16 h20 v16 h20 v-16 h20 v16 h20 v-16 h20 v16 h20 v-16 h20 v16 h20 v-16 h20 v16 h18 v60 h40 v-14 h24 v14 h28 v-14 h24 v14 h28 v-14 h24 v14 h28 v-14 h24 v14 h28 v-14 h24 v14 h28 V230 Z"/>
+      <!-- gate passage -->
+      <path fill="#12181d" d="M440 230 V128 a60 60 0 0 1 120 0 V230 Z"/>
+      <circle id="glow" cx="500" cy="200" r="120" fill="url(#lamp)" clip-path="url(#arch)"/>
+      <!-- Vale -->
+      <g id="vale" fill="#0d1216">
+        <circle cx="500" cy="168" r="9"/>
+        <path d="M486 230 v-38 q0 -12 14 -12 q14 0 14 12 v38 Z"/>
+        <path stroke="#0d1216" stroke-width="3" d="M520 230 V140"/>
+        <path d="M520 140 l9 10 l-9 8 Z"/>
+      </g>
+      <!-- portcullis -->
+      <g clip-path="url(#arch)">
+        <g id="portcullis" stroke="#8b979e" stroke-width="4" fill="none">
+          <path d="M452 60 V226 M476 60 V226 M500 60 V226 M524 60 V226 M548 60 V226"/>
+          <path d="M440 100 H560 M440 140 H560 M440 180 H560 M440 220 H560"/>
+        </g>
+      </g>
+      <path fill="none" stroke="#3a4853" stroke-width="6" d="M440 230 V128 a60 60 0 0 1 120 0 V230"/>
+      <!-- lantern -->
+      <circle cx="596" cy="150" r="46" fill="url(#lamp)"/>
+      <rect x="591" y="143" width="10" height="14" fill="#e9b44c"/>
+      <path stroke="#8b979e" stroke-width="2" d="M580 138 h16 v5"/>
+      <rect y="226" width="1000" height="4" fill="#12181d"/>
+    </svg>
+    <h1>The Gate at Harrowmere</h1>
+    <span class="where" id="where"></span>
+  </header>
+
+  <main class="story">
+    <div id="log" role="log" aria-live="polite"></div>
+    <div class="chips" id="chips"></div>
+    <form id="form" autocomplete="off">
+      <input id="say" type="text" placeholder="What do you try?" aria-label="What do you try?">
+      <button class="act" type="submit">Try it</button>
+    </form>
+  </main>
+
+  <aside class="ledger" aria-label="Your situation">
+    <h2>Vale&rsquo;s suspicion</h2>
+    <div class="tally" id="tally"></div>
+    <h2>You carry</h2>
+    <ul id="carry"></ul>
+    <h2>You know</h2>
+    <ul id="know"></ul>
+    <button class="again" id="again" type="button">Start again</button>
+  </aside>
+
+</div>
+
+<script src="game.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var log = $('log'), input = $('say'), scene = $('scene');
+  var SPEAKERS = { vale: 'Sergeant Vale', clerk: 'The clerk', steward: 'The steward', scrivener: 'The scrivener', tavern: 'A guard, off duty' };
+  var MOODS = ['He barely looks at you.', 'He has noticed you.', 'He is watching your hands.', 'One more and he calls the watch.', 'He has called the watch.'];
+  var state, gateView;
+
+  function print(line, verdict) {
+    var p = document.createElement('p');
+    p.className = line.who + (line.who === 'sys' && verdict === 'arrested' ? ' verdict-arrested' : '');
+    if (SPEAKERS[line.who]) {
+      var s = document.createElement('span');
+      s.className = 'speaker';
+      s.textContent = SPEAKERS[line.who];
+      p.appendChild(s);
+    }
+    p.appendChild(document.createTextNode(line.text));
+    log.appendChild(p);
+  }
+
+  function list(el, items, empty) {
+    el.innerHTML = '';
+    (items.length ? items : [empty]).forEach(function (t) {
+      var li = document.createElement('li');
+      li.textContent = t;
+      if (!items.length) li.className = 'empty';
+      el.appendChild(li);
+    });
+  }
+
+  function render() {
+    $('where').textContent = Gate.placeName(state);
+    if (state.over === 'won-legit' || state.over === 'won-forged') gateView = 'passed';
+    else if (state.over === 'arrested' || state.sealedTurns > 0) gateView = 'shut';
+    else gateView = 'open';
+    scene.dataset.gate = gateView;
+    scene.dataset.away = String(state.place !== 'gate');
+
+    var tally = $('tally');
+    tally.innerHTML = '';
+    for (var i = 0; i < Gate.ARREST_AT; i++) {
+      var mark = document.createElement('i');
+      if (i < state.suspicion) mark.className = 'on';
+      tally.appendChild(mark);
+    }
+    var mood = document.createElement('span');
+    mood.textContent = MOODS[state.suspicion];
+    tally.appendChild(mood);
+
+    list($('carry'), Gate.inventory(state), 'Nothing.');
+    list($('know'), Gate.knowledge(state), 'Nothing useful yet.');
+
+    var chips = $('chips');
+    chips.innerHTML = '';
+    Gate.suggestions(state).forEach(function (text) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = text;
+      b.addEventListener('click', function () { attempt(text); });
+      chips.appendChild(b);
+    });
+    input.disabled = !!state.over;
+    input.placeholder = state.over ? 'The evening is over.' : 'What do you try?';
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function attempt(text) {
+    text = text.trim();
+    if (!text || state.over) return;
+    print({ who: 'you', text: text });
+    var result = Gate.act(state, text);
+    result.lines.forEach(function (l) { print(l, result.verdict); });
+    render();
+    if (!state.over) input.focus();
+  }
+
+  function start() {
+    state = Gate.createState();
+    log.innerHTML = '';
+    Gate.intro().forEach(function (l) { print(l); });
+    render();
+  }
+
+  $('form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var text = input.value;
+    input.value = '';
+    attempt(text);
+  });
+  $('again').addEventListener('click', function () { start(); input.focus(); });
+
+  start();
+})();
+</script>
+</body>
+</html>
